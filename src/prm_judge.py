@@ -104,7 +104,7 @@ def parse_judge_decision(judge_output: str) -> tuple[float, str]:
         end_match = re.search(r'[\r\n]|[.!?](?=\s|$)', remaining)
         if end_match:
             end_idx = end_match.start()
-            rationale = remaining[:end_idx].strip()
+            rationale = remaining[:end_idx+1].strip()
         else:
             rationale = remaining.strip()
             
@@ -146,7 +146,7 @@ def score_path(
         judge_stats["judge_calls"] += 1
         judge_stats["judge_tokens"] += decision["num_tokens"]
         
-        (score, rationale) = parse_judge_decision(decision)
+        (score, rationale) = parse_judge_decision(decision["text"])
         
         scores.append(score)
         rationales.append(rationale)

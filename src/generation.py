@@ -67,7 +67,7 @@ def compute_majority_vote(answers: list[int | None]) -> int | None:
                 majority_ans = ans
                 majority_vote = vote
     
-    return answers
+    return majority_ans
 
 
 def run_greedy(

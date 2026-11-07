@@ -92,7 +92,7 @@ def select_best_path(
             tied_set.add(i)
     
     if len(tied_set) == 1:
-        chosen = tied_set[0]
+        chosen = next(iter(tied_set))
         return {
             **eligible_candidates[chosen],
             "path_score": path_scores[chosen],
