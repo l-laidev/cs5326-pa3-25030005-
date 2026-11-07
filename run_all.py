@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import tqdm
+
 from src.generation import compute_majority_vote, run_greedy, run_self_consistency
 from src.search import run_compute_matched_self_consistency, run_prm_best_of_n
 from src.utils import load_models, save_aggregation_ablation, save_results_summary, save_sc_scaling_curve, set_seed_for_problem
@@ -36,7 +38,8 @@ if __name__ == "__main__":
         samples_per_problem = read_jsonl(per_prob_path)
         already_done = set(record["idx"] for record in samples_per_problem)
     
-    for idx, problem in enumerate(gsm8k):
+    for idx, problem in (pbar := tqdm.tqdm(enumerate(gsm8k), total=len(gsm8k))):
+        pbar.set_description_str(f"Processing Problem #{idx+1}")
         if idx in already_done:
             continue
         
@@ -75,10 +78,16 @@ if __name__ == "__main__":
         
         append_jsonl(per_prob_path, record)
         samples_per_problem.append(record)
-        
+    
+    compliance_rate = sum(("final answer:" in p["greedy"]["completion"].lower()) and (p["greedy"]["answer"] is not None)
+                       for p in samples_per_problem) / len(samples_per_problem)
+    print(f"Greedy Delimiter-Compliance Rate: {compliance_rate}")
+    
     methods = ["greedy", "self_consistency", "prm_min", "prm_product", "prm_step_penalty", "matched_self_consistency"]
     results = []
-    for method in methods:
+    for method in (pbar := tqdm.tqdm(methods)):
+        pbar.set_description_str(f"Processing: {method}")
+        
         this_method = [
             {
                 **(p[method] if "prm" not in method else p["prm"][method.replace("prm_", "")]),
@@ -102,8 +111,10 @@ if __name__ == "__main__":
     
     
     ablations = []
-    for prm_method in filter(lambda x: "prm" in x, methods):
+    for prm_method in (pbar := tqdm.tqdm(filter(lambda x: "prm" in x, methods))):
         this_strategy = prm_method.replace("prm_", "")
+        pbar.set_description_str(f"Processing: {this_strategy}")
+        
         this_method = [
             {
                 **(p["prm"][this_strategy]),
@@ -116,7 +127,7 @@ if __name__ == "__main__":
         if "step_penalty" in this_strategy:
             for lam in [0.0, 0.5, 2.0]:
                 acc, tie = 0.0, 0.0
-                for problem in this_method:
+                for problem in tqdm.tqdm(this_method, desc=f"Lambda={lam}", total=len(this_method), leave=False):
                     cur_prm = run_prm_best_of_n(gen_model, judge_model, gen_tokenizer, judge_tokenizer,
                                                 problem["question"], n=5,
                                                 aggregation_strategy=this_strategy,
@@ -142,9 +153,9 @@ if __name__ == "__main__":
             ablations.append(ablation)
     
     curve = []
-    for N in range(1, 15 +1):
+    for N in tqdm.trange(1, 15 +1, desc="Self-Consistency Curve"):
         acc, gen_tokens = 0.0, 0
-        for problem in samples_per_problem:
+        for problem in tqdm.tqdm(samples_per_problem, desc=f"N={N}", total=len(samples_per_problem), leave=False):
             upto_N = problem["matched_self_consistency"]["candidates"][:N]
             answer = compute_majority_vote([candidate["answer"] for candidate in upto_N])
             
