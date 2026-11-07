@@ -30,6 +30,7 @@ if __name__ == "__main__":
         gsm8k = [json.loads(line) for line in f.readlines()]
     
     gen_model, gen_tokenizer, judge_model, judge_tokenizer = load_models()
+    print(f"Generator on {gen_model.device} and Judge on {judge_model.device}")
     
     samples_per_problem = []
     already_done = set()
@@ -45,10 +46,13 @@ if __name__ == "__main__":
         
         set_seed_for_problem(idx)
         
+        pbar.set_description_str(f"Processing Problem #{idx+1} [Greedy]")
         greedy = run_greedy(gen_model, gen_tokenizer, problem["question"])
+        pbar.set_description_str(f"Processing Problem #{idx+1} [SC@5]")
         self_consistency = run_self_consistency(gen_model, gen_tokenizer, problem["question"], n=5)
         prm = {}
         for prm_strategy in ["min", "product", "step_penalty"]:
+            pbar.set_description_str(f"Processing Problem #{idx+1} [PRM, {prm_strategy}]")
             cur_prm = run_prm_best_of_n(gen_model, judge_model, gen_tokenizer, judge_tokenizer,
                               problem["question"], n=5, aggregation_strategy=prm_strategy,
                               candidates=self_consistency["candidates"])
@@ -59,6 +63,7 @@ if __name__ == "__main__":
             
             prm[prm_strategy] = cur_prm
         
+        pbar.set_description_str(f"Processing Problem #{idx+1} [Matched SC@15]")
         matched_self_consistency = run_compute_matched_self_consistency(
             gen_model, gen_tokenizer, problem["question"], target_calls=15,
             existing_candidates=self_consistency["candidates"])
