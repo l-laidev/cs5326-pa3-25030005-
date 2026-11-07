@@ -6,8 +6,23 @@ from src.search import run_compute_matched_self_consistency, run_prm_best_of_n
 from src.utils import load_models, save_aggregation_ablation, save_results_summary, save_sc_scaling_curve, set_seed_for_problem
 
 
+def append_jsonl(path, record):
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(exist_ok=True, parents=True)
+    
+    with open(path, "a") as f:
+        f.write(json.dumps(record))
+
+def read_jsonl(path):
+    path = Path(path) if not isinstance(path, Path) else path
+    path.parent.mkdir(exist_ok=True, parents=True)
+    
+    with open(path, "r") as f:
+        return [json.loads(line) for line in f.readlines()]
+
 if __name__ == "__main__":
     gsm8k_path = Path("data") / "gsm8k_test_50.jsonl"
+    per_prob_path = Path("outputs") / "per_problem.jsonl"
     
     with open(gsm8k_path, "r") as f:
         gsm8k = [json.loads(line) for line in f.readlines()]
@@ -15,7 +30,16 @@ if __name__ == "__main__":
     gen_model, gen_tokenizer, judge_model, judge_tokenizer = load_models()
     
     samples_per_problem = []
+    already_done = set()
+    
+    if per_prob_path.exists():
+        samples_per_problem = read_jsonl(per_prob_path)
+        already_done = set(record["idx"] for record in samples_per_problem)
+    
     for idx, problem in enumerate(gsm8k):
+        if idx in already_done:
+            continue
+        
         set_seed_for_problem(idx)
         
         greedy = run_greedy(gen_model, gen_tokenizer, problem["question"])
@@ -40,15 +64,18 @@ if __name__ == "__main__":
         matched_self_consistency["generated_tokens"] += self_consistency["generated_tokens"]
         matched_self_consistency["time_seconds"] += self_consistency["time_seconds"]
         
-        samples_per_problem.append(
-            {
-                **problem,
-                "greedy": greedy,
-                "self_consistency": self_consistency,
-                "prm": prm,
-                "matched_self_consistency": matched_self_consistency,
-            }
-        )
+        record = {
+            **problem,
+            "idx": idx,
+            "greedy": greedy,
+            "self_consistency": self_consistency,
+            "prm": prm,
+            "matched_self_consistency": matched_self_consistency,
+        }
+        
+        append_jsonl(per_prob_path, record)
+        samples_per_problem.append(record)
+        
     methods = ["greedy", "self_consistency", "prm_min", "prm_product", "prm_step_penalty", "matched_self_consistency"]
     results = []
     for method in methods:
