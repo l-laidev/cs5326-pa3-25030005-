@@ -41,5 +41,18 @@ def extract_answer(completion_text: str) -> int | None:
       - No 'Final Answer' present -> None
       - Empty string or None-like garbage -> None, and never raise
     """
-    # TODO: Implement robust regex answer extraction
-    raise NotImplementedError("Implement extract_answer in src/extraction.py")
+    completion_text = completion_text.lower()
+    
+    last_occurrence = completion_text.rfind("Final Answer")
+    if last_occurrence == -1:
+        return None
+
+    to_parse = completion_text[last_occurrence:]
+    for piece in to_parse.split(" "):
+        matched = re.match("[0-9]+", piece, flags=re.DOTALL | re.IGNORECASE)
+        if matched is not None:
+            piece = re.sub(r"[$,]", "", piece)
+            if int(piece) != float(piece):
+                return None  # non-integer
+            return int(piece)
+    return None
