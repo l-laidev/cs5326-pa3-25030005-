@@ -54,7 +54,7 @@ def extract_answer(completion_text: str) -> int | None:
     for piece in to_parse.split(" "):
         matched = re.findall("[0-9]+", piece, flags=re.DOTALL | re.IGNORECASE)
         if matched is not None and len(matched) > 0:
-            piece = re.sub(r"[$,]", "", piece).strip()
+            piece = re.sub(r"[^0-9.-]", "", piece).strip()
             if int(float(piece)) != float(piece):
                 return None  # non-integer
             return int(float(piece))
