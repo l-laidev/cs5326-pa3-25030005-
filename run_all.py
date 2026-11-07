@@ -13,7 +13,7 @@ def append_jsonl(path, record):
     path.parent.mkdir(exist_ok=True, parents=True)
     
     with open(path, "a") as f:
-        f.write(json.dumps(record))
+        f.write(json.dumps(record) + "\n")
 
 def read_jsonl(path):
     path = Path(path) if not isinstance(path, Path) else path
