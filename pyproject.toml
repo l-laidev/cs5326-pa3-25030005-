@@ -11,7 +11,11 @@ readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "bitsandbytes>=0.45.5",
+    "matplotlib>=3.10.9",
+    "pandas>=2.3.3",
     "pytest",
+    "scipy>=1.15.3",
+    "seaborn>=0.13.2",
     "tabulate",
 ]
 
