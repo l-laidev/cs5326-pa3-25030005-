@@ -25,6 +25,7 @@ def read_jsonl(path):
 if __name__ == "__main__":
     gsm8k_path = Path("data") / "gsm8k_test_50.jsonl"
     per_prob_path = Path("outputs") / "per_problem.jsonl"
+    ablation_per_prob_base = Path("outputs")
     
     with open(gsm8k_path, "r") as f:
         gsm8k = [json.loads(line) for line in f.readlines()]
@@ -131,13 +132,30 @@ if __name__ == "__main__":
         ]
         if "step_penalty" in this_strategy:
             for lam in [0.0, 0.5, 2.0]:
+                ablation_per_prob_path = ablation_per_prob_base / f"lam-{lam}-per-prob.jsonl"
+                ablation_samples = []
+                ablation_already_done = set()
+                
+                if ablation_per_prob_path.exists():
+                    ablation_samples = read_jsonl(ablation_per_prob_path)
+                    ablation_already_done = set(record["idx"] for record in ablation_samples)
+                
                 acc, tie = 0.0, 0.0
-                for problem in tqdm.tqdm(this_method, desc=f"Lambda={lam}", total=len(this_method), leave=False):
-                    cur_prm = run_prm_best_of_n(gen_model, judge_model, gen_tokenizer, judge_tokenizer,
-                                                problem["question"], n=5,
-                                                aggregation_strategy=this_strategy,
-                                                candidates=problem["self_consistency_candidates"],
-                                                penalty_lambda=lam)
+                for idx, problem in tqdm.tqdm(enumerate(this_method), desc=f"Lambda={lam}", total=len(this_method), leave=False):
+                    if idx not in ablation_already_done:
+                        set_seed_for_problem(idx)
+                        cur_prm = run_prm_best_of_n(gen_model, judge_model, gen_tokenizer, judge_tokenizer,
+                                                    problem["question"], n=5,
+                                                    aggregation_strategy=this_strategy,
+                                                    candidates=problem["self_consistency_candidates"],
+                                                    penalty_lambda=lam)
+                        record = {**cur_prm, "idx": idx}
+                        ablation_samples.append(record)
+                        append_jsonl(ablation_per_prob_path, record)
+                    else:
+                        cur_prm = [record for record in ablation_samples if record["idx"] == idx]
+                        cur_prm = cur_prm[0]
+                    
                     acc += int(cur_prm["answer"] == problem["ground_truth_answer"])
                     tie += int(cur_prm["selected"]["num_tied"] > 1)
                 
