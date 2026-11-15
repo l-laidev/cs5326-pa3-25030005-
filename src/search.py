@@ -96,7 +96,7 @@ def select_best_path(
         return {
             **eligible_candidates[chosen],
             "path_score": path_scores[chosen],
-            "num_tied": len(tied_set),  # TODO: is this equal to size of tied set, or size-1
+            "num_tied": len(tied_set),
         }
     
     tied_answers = [eligible_candidates[idx]["answer"] for idx in tied_set]

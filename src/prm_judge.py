@@ -48,7 +48,7 @@ A step is VALID if its arithmetic is sound and it follows logically from the pro
 
 You must reply following this structure:
 Verdict: VALID OR Verdict: INVALID
-Rationale: <your reasnoning or rationale for why the Current Step is deemed VALID or INVALID>
+Rationale: <your reasoning or rationale for why the Current Step is deemed VALID or INVALID>
 """.strip()
 
 
