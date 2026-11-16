@@ -215,20 +215,20 @@ def judge_precision_recall():
     print(f'Recall:    {recall:.2f}')
 
 if __name__ == "__main__":
-    # prm_vs_sc()
-    # print("\n")
-    
-    judge_failure_cases()
+    prm_vs_sc()
     print("\n")
     
-    # if not os.path.exists("outputs/manual_audit.json"):
-    #     steps = get_steps_for_manual_audit()
-        
-    #     assert len(list(filter(lambda x: x["judge_verdict"] == "VALID", steps))) >= 30-10
-    #     assert len(list(filter(lambda x: x["judge_verdict"] == "INVALID", steps))) >= 10
-        
-    #     with open("outputs/manual_audit.json", "w") as f:
-    #         json.dump(steps, f, indent=4)
-
-    # judge_precision_recall()
+    # judge_failure_cases()
     # print("\n")
+    
+    if not os.path.exists("outputs/manual_audit.json"):
+        steps = get_steps_for_manual_audit()
+        
+        assert len(list(filter(lambda x: x["judge_verdict"] == "VALID", steps))) >= 30-10
+        assert len(list(filter(lambda x: x["judge_verdict"] == "INVALID", steps))) >= 10
+        
+        with open("outputs/manual_audit.json", "w") as f:
+            json.dump(steps, f, indent=4)
+
+    judge_precision_recall()
+    print("\n")

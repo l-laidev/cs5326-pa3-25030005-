@@ -15,19 +15,35 @@ def acc_vs_calls_sc():
     with open("outputs/sc_scaling_curve.json", "r") as f:
         data = json.load(f)
     
-    df = pd.DataFrame(data)
+    with open("outputs/results_summary.json") as f:
+        prm_points = json.load(f)
     
-    df.plot(
+    df = pd.DataFrame(data)
+    df["N"] *= 50  # total calls for SC = N generations * total problems
+    
+    df = df.rename(columns={"Accuracy (%)": "Self-Consistency"})
+    
+    ax = df.plot(
         x="N",
-        y="Accuracy (%)",
+        # y="Accuracy (%)",
+        y="Self-Consistency",
         marker="o",
         linewidth=2.5,
         markersize=6,
         figsize=(8, 5),
     )
+    
+    for strat, color in zip(
+        ["min", "product", "step_penalty"],
+        ["red", "green", "blue"]
+    ):
+        ax.axhline(y=[p["Accuracy (%)"] for p in prm_points if f"prm_{strat}" == p["Method"]][0],
+                   color=color,
+                   linestyle="--", linewidth=2, label=f"PRM ({strat})")
+    ax.legend()
 
-    plt.title("Model Accuracy by N", fontsize=13, fontweight="bold", pad=10)
-    plt.xlabel("N", fontsize=11)
+    plt.title("Model Accuracy by Total LLM Calls", fontsize=13, fontweight="bold", pad=10)
+    plt.xlabel("Calls", fontsize=11)
     plt.ylabel("Accuracy (%)", fontsize=11)
     sns.despine()
     
@@ -38,10 +54,12 @@ def acc_vs_tokens():
             data = json.load(f)
         
     df = pd.DataFrame(data)
+    df = df.rename(columns={"Accuracy (%)": "Self-Consistency"})
     
     df.plot(
         x="Avg Gen Tokens / Problem",
-        y="Accuracy (%)",
+        # y="Accuracy (%)",
+        y="Self-Consistency",
         marker="o",
         linewidth=2.5,
         markersize=6,
