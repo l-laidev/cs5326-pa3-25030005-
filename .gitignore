@@ -8,8 +8,9 @@ __pycache__/
 *.bin
 .DS_Store
 _reference/
-outputs/*
+# outputs/
 !outputs/.gitkeep
 
 
 *.egg-info
+**/*.Identifier
